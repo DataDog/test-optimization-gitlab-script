@@ -58,6 +58,11 @@ if [ -n "$RUBY_TRACER_VERSION" ]; then
 	export DD_SET_TRACER_VERSION_RUBY=${RUBY_TRACER_VERSION}
 fi
 
+# $GO_TRACER_VERSION or $DD_SET_TRACER_VERSION_GO are optional
+if [ -n "$GO_TRACER_VERSION" ]; then
+	export DD_SET_TRACER_VERSION_GO=${GO_TRACER_VERSION}
+fi
+
 # $JAVA_INSTRUMENTED_BUILD_SYSTEM or $DD_INSTRUMENTATION_BUILD_SYSTEM_JAVA are optional
 if [ -n "$JAVA_INSTRUMENTED_BUILD_SYSTEM" ]; then
 	export DD_INSTRUMENTATION_BUILD_SYSTEM_JAVA=${JAVA_INSTRUMENTED_BUILD_SYSTEM}
@@ -65,8 +70,8 @@ fi
 
 export DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER="gitlab"
 
-installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v5.sh"
-installation_script_checksum="903f1146fe123a1f7c6accdc48411546eead172f2d577fb41876d29b537eb7d6"
+installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v6.sh"
+installation_script_checksum="23c0bbba82ee72342dd3967c3147d1086debf6482e8fd729e226d051dd152cd4"
 script_filepath="install_test_visibility.sh"
 
 if command -v curl >/dev/null 2>&1; then
@@ -108,5 +113,8 @@ if [ ! -z "$DD_TRACER_VERSION_PYTHON" ]; then
 fi
 if [ ! -z "$DD_TRACER_VERSION_RUBY" ]; then
   echo "- __Ruby:__ $DD_TRACER_VERSION_RUBY"
+fi
+if [ ! -z "$DD_TRACER_VERSION_GO" ]; then
+  echo "- __Go:__ $DD_TRACER_VERSION_GO"
 fi
 echo "---"
