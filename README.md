@@ -16,7 +16,12 @@ Execute this script in your GitLab CI's job YAML before running the tests. Pass 
 test_node:
   image: node:latest
   script:
-    - LANGUAGES="js" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" source <(curl -Ls https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.5/script.sh)
+    - |
+      LANGUAGES="js" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.5/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^2932579e425337d91244232bc6ea2b549e2600703322896ab05a49877b6434e6' && \
+        source <(echo "$SRC") || \
+        echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - npm run test
 ```
 
@@ -49,7 +54,12 @@ test_node:
     - export DD_API_KEY="YOUR_API_KEY_SECRET"
     - export DD_ENV="staging-tests"
     - export DD_TAGS="layer:api,team:intake,key:value"
-    - LANGUAGES="js" SITE="datad0g.com" source <(curl -Ls https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.5/script.sh)
+    - |
+      LANGUAGES="js" SITE="datadoghq.com" \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.5/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^2932579e425337d91244232bc6ea2b549e2600703322896ab05a49877b6434e6' && \
+        source <(echo "$SRC") || \
+        echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - npm run test
 ```
 
@@ -65,7 +75,12 @@ To use this script with vitest you need to modify the NODE_OPTIONS environment v
 test_node_vitest:
   image: node:latest
   script:
-    - LANGUAGES="js" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" source <(curl -Ls https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.5/script.sh)
+    - |
+      LANGUAGES="js" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.5/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^2932579e425337d91244232bc6ea2b549e2600703322896ab05a49877b6434e6' && \
+        source <(echo "$SRC") || \
+        echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - export NODE_OPTIONS="$NODE_OPTIONS --import $DD_TRACE_ESM_IMPORT"
     - npm run test
 ```
