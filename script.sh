@@ -83,7 +83,7 @@ else
 	exit 1
 fi
 
-if ! echo "$installation_script_checksum $script_filepath" | sha256sum --quiet -c -; then
+if ! echo "$installation_script_checksum  $script_filepath" | sha256sum -c -; then
 	>&2 echo "Error: The checksum of the downloaded script does not match the expected checksum."
         exit 1
 fi
