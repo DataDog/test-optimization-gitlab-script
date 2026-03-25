@@ -63,6 +63,11 @@ if [ -n "$GO_TRACER_VERSION" ]; then
 	export DD_SET_TRACER_VERSION_GO=${GO_TRACER_VERSION}
 fi
 
+# $GO_MODULE_DIR or $DD_CIVISIBILITY_GO_MODULE_DIR are optional
+if [ -n "$GO_MODULE_DIR" ]; then
+	export DD_CIVISIBILITY_GO_MODULE_DIR=${GO_MODULE_DIR}
+fi
+
 # $JAVA_INSTRUMENTED_BUILD_SYSTEM or $DD_INSTRUMENTATION_BUILD_SYSTEM_JAVA are optional
 if [ -n "$JAVA_INSTRUMENTED_BUILD_SYSTEM" ]; then
 	export DD_INSTRUMENTATION_BUILD_SYSTEM_JAVA=${JAVA_INSTRUMENTED_BUILD_SYSTEM}
@@ -70,8 +75,10 @@ fi
 
 export DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER="gitlab"
 
-installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v11.sh"
-installation_script_checksum="fc64c45fd4b45b4b01773c58a3a116bef212dc4095508a6e27e19e50e901bd55"
+# Keep the installer URL and checksum pinned together so the wrapper executes a
+# deterministic upstream payload.
+installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v12.sh"
+installation_script_checksum="91b6c7bb2c28ef5604c2a2b233da7d931a9b3b5d20b7872254ebb0e689e62f4a"
 script_filepath="install_test_visibility.sh"
 
 if command -v curl >/dev/null 2>&1; then
