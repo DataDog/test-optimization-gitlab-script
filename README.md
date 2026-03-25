@@ -41,6 +41,7 @@ The script takes in the following environment variables:
 | PYTHON_TRACER_VERSION          | The version of Datadog Python tracer to use. Defaults to the latest release.                                                                                                                                                                                                                        | false    |               |
 | RUBY_TRACER_VERSION            | The version of datadog-ci gem to use. Defaults to the latest release.                                                                                                                                                                                                                               | false    |               |
 | GO_TRACER_VERSION              | The version of Orchestrion automatic compile-time instrumentation of Go code (https://github.com/datadog/orchestrion) to use. Defaults to the latest release.                                                                                                                                       | false    |               |
+| GO_MODULE_DIR                  | Path to the Go module root directory to instrument. Use this when the repository contains multiple Go modules or the Go module is not in the repository root.                                                                                                                                       | false    |               |
 | JAVA_INSTRUMENTED_BUILD_SYSTEM | If provided, only the specified build systems will be instrumented (allowed values are `gradle`,`maven`,`sbt`,`ant`,`all`). `all` is a special value that instruments every Java process. If this property is not provided, all known build systems will be instrumented (Gradle, Maven, SBT, Ant). | false    |               |
 
 ### Additional configuration
@@ -61,6 +62,24 @@ test_node:
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - npm run test
+```
+
+### Go multi-module repositories
+
+If your repository contains multiple Go modules, or the Go module you want to instrument is not at the repository root, set `GO_MODULE_DIR` to the module root directory that contains the target `go.mod` file:
+
+```yaml
+test_go:
+  image: golang:1.25.0
+  script:
+    - |
+      LANGUAGES="go" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" GO_MODULE_DIR="./services/payments" \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.6/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^5df7aea8a13e259c66109ecf7f88fef8ffe22369abc7425bf435b4bbfefb0376' && \
+        source <(echo "$SRC") || \
+        echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
+    - cd services/payments
+    - go test ./...
 ```
 
 ## Limitations
