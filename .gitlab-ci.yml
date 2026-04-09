@@ -1,6 +1,6 @@
 default:
   tags:
-    - runner:main
+    - arch:amd64
 
 stages:
   - test
