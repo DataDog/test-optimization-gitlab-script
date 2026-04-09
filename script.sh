@@ -73,12 +73,17 @@ if [ -n "$JAVA_INSTRUMENTED_BUILD_SYSTEM" ]; then
 	export DD_INSTRUMENTATION_BUILD_SYSTEM_JAVA=${JAVA_INSTRUMENTED_BUILD_SYSTEM}
 fi
 
+# $PYTHON_COVERAGE_VERSION or $DD_SET_COVERAGE_VERSION_PYTHON are optional
+if [ -n "$PYTHON_COVERAGE_VERSION" ]; then
+	export DD_SET_COVERAGE_VERSION_PYTHON=${PYTHON_COVERAGE_VERSION}
+fi
+
 export DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER="gitlab"
 
 # Keep the installer URL and checksum pinned together so the wrapper executes a
 # deterministic upstream payload.
-installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v12.sh"
-installation_script_checksum="91b6c7bb2c28ef5604c2a2b233da7d931a9b3b5d20b7872254ebb0e689e62f4a"
+installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v13.sh"
+installation_script_checksum="1271425bc94d25ff771111802f1b010104f3a9245bd491b67f1be561529f6b89"
 script_filepath="install_test_visibility.sh"
 
 if command -v curl >/dev/null 2>&1; then
