@@ -43,6 +43,16 @@ if [ -n "$JAVA_TRACER_VERSION" ]; then
 	export DD_SET_TRACER_VERSION_JAVA=${JAVA_TRACER_VERSION}
 fi
 
+# $JAVA_TRACER_REPOSITORY_URL or $DD_SET_TRACER_REPOSITORY_URL_JAVA are optional
+if [ -n "$JAVA_TRACER_REPOSITORY_URL" ]; then
+	export DD_SET_TRACER_REPOSITORY_URL_JAVA=${JAVA_TRACER_REPOSITORY_URL}
+fi
+
+# $JAVA_AUTH_HEADER or $DD_SET_AUTH_HEADER_JAVA are optional
+if [ -n "$JAVA_AUTH_HEADER" ]; then
+	export DD_SET_AUTH_HEADER_JAVA=${JAVA_AUTH_HEADER}
+fi
+
 # $JS_TRACER_VERSION or $DD_SET_TRACER_VERSION_JS are optional
 if [ -n "$JS_TRACER_VERSION" ]; then
 	export DD_SET_TRACER_VERSION_JS=${JS_TRACER_VERSION}
@@ -82,8 +92,8 @@ export DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER="gitlab"
 
 # Keep the installer URL and checksum pinned together so the wrapper executes a
 # deterministic upstream payload.
-installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v13.sh"
-installation_script_checksum="1271425bc94d25ff771111802f1b010104f3a9245bd491b67f1be561529f6b89"
+installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v14.sh"
+installation_script_checksum="73824cfac695ed17177b4a2fc0b9afb3b19b639d27a20166190bf8997248423b"
 script_filepath="install_test_visibility.sh"
 
 if command -v curl >/dev/null 2>&1; then
