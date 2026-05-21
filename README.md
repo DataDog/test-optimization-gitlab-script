@@ -18,8 +18,8 @@ test_node:
   script:
     - |
       LANGUAGES="js" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.8/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^f2b93329e8b7ae59ec8901ce362c1a0492faeb54e60dbf6d0216ea81a1e5b1fe' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.9/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^b38d0740f178e9706e6cf129281494656974db25528e3ac6187a8ce1077f7c6f' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - npm run test
@@ -37,6 +37,8 @@ The script takes in the following environment variables:
 | SERVICE                        | The name of the service or library being tested.                                                                                                                                                                                                                                                    | false    |               |
 | DOTNET_TRACER_VERSION          | The version of Datadog .NET tracer to use. Defaults to the latest release.                                                                                                                                                                                                                          | false    |               |
 | JAVA_TRACER_VERSION            | The version of Datadog Java tracer to use. Defaults to the latest release.                                                                                                                                                                                                                          | false    |               |
+| JAVA_TRACER_REPOSITORY_URL     | Base URL of a Maven repository (or proxy/mirror) used to download the Java tracer JAR and its `.sha256`. The path under the base must follow the standard Maven layout for `com.datadoghq:dd-java-agent`. Defaults to `https://repo1.maven.org/maven2/com/datadoghq/dd-java-agent`.                  | false    |               |
+| JAVA_AUTH_HEADER               | HTTP header used to authenticate against `JAVA_TRACER_REPOSITORY_URL`, provided as a complete `Name: Value` string (e.g. `Authorization: Bearer <token>`). Requires `JAVA_TRACER_REPOSITORY_URL` to be set to a custom repository URL. Redirects are not followed when this option is set.          | false    |               |
 | JS_TRACER_VERSION              | The version of Datadog JS tracer to use. Defaults to the latest release.                                                                                                                                                                                                                            | false    |               |
 | PYTHON_TRACER_VERSION          | The version of Datadog Python tracer to use. Defaults to the latest release.                                                                                                                                                                                                                        | false    |               |
 | PYTHON_COVERAGE_VERSION        | The version of the Python `coverage` package to install. Defaults to `7.13.5`.                                                                                                                                                                                                                      | false    | 7.13.5        |
@@ -58,8 +60,8 @@ test_node:
     - export DD_TAGS="layer:api,team:intake,key:value"
     - |
       LANGUAGES="js" SITE="datadoghq.com" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.8/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^f2b93329e8b7ae59ec8901ce362c1a0492faeb54e60dbf6d0216ea81a1e5b1fe' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.9/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^b38d0740f178e9706e6cf129281494656974db25528e3ac6187a8ce1077f7c6f' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - npm run test
@@ -75,8 +77,8 @@ test_go:
   script:
     - |
       LANGUAGES="go" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" GO_MODULE_DIR="./services/payments" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.8/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^f2b93329e8b7ae59ec8901ce362c1a0492faeb54e60dbf6d0216ea81a1e5b1fe' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.9/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^b38d0740f178e9706e6cf129281494656974db25528e3ac6187a8ce1077f7c6f' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - cd services/payments
@@ -97,8 +99,8 @@ test_node_vitest:
   script:
     - |
       LANGUAGES="js" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.8/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^f2b93329e8b7ae59ec8901ce362c1a0492faeb54e60dbf6d0216ea81a1e5b1fe' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.9/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^b38d0740f178e9706e6cf129281494656974db25528e3ac6187a8ce1077f7c6f' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - export NODE_OPTIONS="$NODE_OPTIONS --import $DD_TRACE_ESM_IMPORT"
