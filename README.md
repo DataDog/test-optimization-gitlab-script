@@ -18,8 +18,8 @@ test_node:
   script:
     - |
       LANGUAGES="js" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.9/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^b38d0740f178e9706e6cf129281494656974db25528e3ac6187a8ce1077f7c6f' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.10/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^c82030bdbc7cbbbb139751885ca0392a7191c858f5a080ae364e0ec16218b783' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - npm run test
@@ -61,8 +61,8 @@ test_node:
     - export DD_TAGS="layer:api,team:intake,key:value"
     - |
       LANGUAGES="js" SITE="datadoghq.com" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.9/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^b38d0740f178e9706e6cf129281494656974db25528e3ac6187a8ce1077f7c6f' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.10/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^c82030bdbc7cbbbb139751885ca0392a7191c858f5a080ae364e0ec16218b783' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - npm run test
@@ -78,8 +78,8 @@ test_go:
   script:
     - |
       LANGUAGES="go" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" GO_MODULE_DIR="./services/payments" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.9/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^b38d0740f178e9706e6cf129281494656974db25528e3ac6187a8ce1077f7c6f' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.10/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^c82030bdbc7cbbbb139751885ca0392a7191c858f5a080ae364e0ec16218b783' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - cd services/payments
@@ -100,8 +100,8 @@ test_node_vitest:
   script:
     - |
       LANGUAGES="js" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.9/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^b38d0740f178e9706e6cf129281494656974db25528e3ac6187a8ce1077f7c6f' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.10/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^c82030bdbc7cbbbb139751885ca0392a7191c858f5a080ae364e0ec16218b783' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - export NODE_OPTIONS="$NODE_OPTIONS --import $DD_TRACE_ESM_IMPORT"
