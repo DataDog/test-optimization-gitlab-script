@@ -31,7 +31,7 @@ The script takes in the following environment variables:
 
 | Name                           | Description                                                                                                                                                                                                                                                                                         | Required | Default       |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------- |
-| LANGUAGES                      | List of languages to be instrumented. Can be either "all" or any of "java", "js", "python", "dotnet", "ruby" (multiple languages can be specified as a space-separated list).                                                                                                                       | true     |               |
+| LANGUAGES                      | List of languages to be instrumented. Can be either "all" or any of "java", "js", "python", "dotnet", "ruby", "go" (multiple languages can be specified as a space-separated list).                                                                                                                 | true     |               |
 | API_KEY                        | Datadog API key. Can be found at https://app.datadoghq.com/organization-settings/api-keys                                                                                                                                                                                                           | true     |               |
 | SITE                           | Datadog site. See https://docs.datadoghq.com/getting_started/site for more information about sites.                                                                                                                                                                                                 | false    | datadoghq.com |
 | SERVICE                        | The name of the service or library being tested.                                                                                                                                                                                                                                                    | false    |               |
@@ -42,11 +42,11 @@ The script takes in the following environment variables:
 | JAVA_AUTH_DISABLE_REDIRECTS    | When set to any non-empty value, disables HTTP redirect following for Java tracer downloads that send `JAVA_AUTH_HEADER`. Use this if your repository never redirects and you want to guarantee the auth header is only ever sent to the configured `JAVA_TRACER_REPOSITORY_URL` host.                                                                                                                                                                                                                                                                                                                  | false    |               |
 | JS_TRACER_VERSION              | The version of Datadog JS tracer to use. Defaults to the latest release.                                                                                                                                                                                                                            | false    |               |
 | PYTHON_TRACER_VERSION          | The version of Datadog Python tracer to use. Defaults to the latest release.                                                                                                                                                                                                                        | false    |               |
-| PYTHON_COVERAGE_VERSION        | The version of the Python `coverage` package to install. Defaults to `7.13.5`.                                                                                                                                                                                                                      | false    | 7.13.5        |
 | RUBY_TRACER_VERSION            | The version of datadog-ci gem to use. Defaults to the latest release.                                                                                                                                                                                                                               | false    |               |
-| GO_TRACER_VERSION              | The version of Orchestrion automatic compile-time instrumentation of Go code (https://github.com/datadog/orchestrion) to use. Defaults to the latest release.                                                                                                                                       | false    |               |
-| GO_MODULE_DIR                  | Path to the Go module root directory to instrument. Use this when the repository contains multiple Go modules or the Go module is not in the repository root.                                                                                                                                       | false    |               |
+| GO_TRACER_VERSION              | The version of [ddtest](https://github.com/DataDog/ddtest) to use for Go, `v1.14.0` or newer. Defaults to the latest release. See [Tracing Go tests](#tracing-go-tests).                                                                                                                            | false    |               |
 | JAVA_INSTRUMENTED_BUILD_SYSTEM | If provided, only the specified build systems will be instrumented (allowed values are `gradle`,`maven`,`sbt`,`ant`,`all`). `all` is a special value that instruments every Java process. If this property is not provided, all known build systems will be instrumented (Gradle, Maven, SBT, Ant). | false    |               |
+
+The deprecated variables `GO_MODULE_DIR` and `PYTHON_COVERAGE_VERSION` are still accepted, with a warning, and have no effect: ddtest instruments `go test` in every Go module, and the Python tracer no longer needs the `coverage` package, which the script no longer installs.
 
 ### Additional configuration
 
@@ -66,24 +66,6 @@ test_node:
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - npm run test
-```
-
-### Go multi-module repositories
-
-If your repository contains multiple Go modules, or the Go module you want to instrument is not at the repository root, set `GO_MODULE_DIR` to the module root directory that contains the target `go.mod` file:
-
-```yaml
-test_go:
-  image: golang:1.25.0
-  script:
-    - |
-      LANGUAGES="go" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" GO_MODULE_DIR="./services/payments" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.10/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^c82030bdbc7cbbbb139751885ca0392a7191c858f5a080ae364e0ec16218b783' && \
-        source <(echo "$SRC") || \
-        echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
-    - cd services/payments
-    - go test ./...
 ```
 
 ## Limitations
@@ -113,3 +95,26 @@ test_node_vitest:
 ### Tracing cypress tests
 
 To instrument your [Cypress](https://www.cypress.io/) tests with Datadog Test Optimization, please follow the manual steps in the [docs](https://docs.datadoghq.com/tests/setup/javascript/?tab=cypress).
+
+### Tracing Go tests
+
+Go tests report through [`ddtest instrument`](https://github.com/DataDog/ddtest/blob/main/ddto/README.md). The script puts ddtest's `go` command first on `PATH` in the job's shell. That `go` runs `go test` through ddtest, also when `make`, a script or [gotestsum](https://github.com/gotestyourself/gotestsum) starts it, and runs every other `go` command unchanged. The script does not modify your `go.mod`, and a repository with several Go modules needs no configuration.
+
+```yaml
+test_go:
+  image: golang:1.25
+  script:
+    - |
+      LANGUAGES="go" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.2.10/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^c82030bdbc7cbbbb139751885ca0392a7191c858f5a080ae364e0ec16218b783' && \
+        source <(echo "$SRC") || \
+        echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
+    - go test ./...
+```
+
+- The job's image needs Go 1.25 or newer. With an older Go, the script prints a warning and skips Go instrumentation, and the job continues. Your `go.mod` can still declare an older Go version.
+- The job downloads ddtest from `github.com`.
+- Run the tests later in the same job, after the script. ddtest's `go` command lives in the job user's cache directory and is a link to the executable in the `.datadog` folder that the script creates. If a later command deletes that folder or puts another `go` first on `PATH`, `go test` runs without Test Optimization.
+- With Test Impact Analysis, build the tests with coverage in count or atomic mode, such as `go test -cover -covermode=atomic ./...`, so each test reports the code it ran.
+- `GO_TRACER_VERSION` selects a ddtest release. It used to select an Orchestrion version, so a value set then no longer installs that version. A value that names no ddtest release from `v1.14.0` on, such as `v1.8.0`, installs the latest ddtest with a warning, and a version from `v1.14.0` on installs the ddtest release with the same number. To keep Orchestrion, use release v1.2.10 of this script or earlier.

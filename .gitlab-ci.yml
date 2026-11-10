@@ -12,7 +12,8 @@ test_java_script:
   script:
     - |
       bash <<'BASH'
-      set -euo pipefail
+      # script.sh reads variables that may be unset, so no nounset.
+      set -eo pipefail
       LANGUAGES="java" SERVICE="my-service" API_KEY="dummy" JAVA_INSTRUMENTED_BUILD_SYSTEM="all" source <(cat script.sh)
       export LOG_FILE="java-output.log"
       export TRACER_INIT_LOG="CI Visibility settings"
@@ -20,198 +21,76 @@ test_java_script:
       grep -q "$TRACER_INIT_LOG" "$LOG_FILE" || { echo "Error: Output does not contain tracer initialisation log: $TRACER_INIT_LOG"; exit 1; }
       BASH
 
+# Each job sources script.sh for Go in the job's shell, as the README shows,
+# and runs go test in the next commands against a local stand-in for the
+# intake: see tests/go-smoke.sh. The intake needs Python.
 .go_smoke_test:
   stage: test
   cache: []
   before_script:
-    - |
-      if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
-        apt-get update
-        apt-get install -y curl
-      fi
-      go version
+    - sh tests/prepare-container.sh
+    - go version
   script:
-    - |
-      bash <<'BASH'
-      set -euo pipefail
+    - bash tests/go-smoke.sh
 
-      fail() {
-        echo "Error: $1" >&2
-        exit 1
-      }
-
-      # Create a minimal Go module in the requested directory so the wrapper can
-      # exercise the live installer against representative repository layouts.
-      create_go_module() {
-        local module_dir="$1"
-        local module_name="$2"
-        local module_go="$3"
-
-        mkdir -p "$module_dir"
-        printf 'module %s\n\ngo %s\n' "${module_name}" "${module_go}" > "${module_dir}/go.mod"
-        printf '%s\n' \
-          'package smoke' \
-          '' \
-          'import "testing"' \
-          '' \
-          'func TestSmoke(t *testing.T) {}' > "${module_dir}/smoke_test.go"
-      }
-
-      case "${PROJECT_LAYOUT}" in
-        root)
-          create_go_module "." "example.com/test-optimization-gitlab-script-smoke" "${PROJECT_GO}"
-          ;;
-        single_nested)
-          create_go_module "services/payments" "example.com/test-optimization-gitlab-script-smoke/payments" "${PROJECT_GO}"
-          ;;
-        multiple_modules)
-          create_go_module "services/payments" "example.com/test-optimization-gitlab-script-smoke/payments" "${PROJECT_GO}"
-          create_go_module "services/refunds" "example.com/test-optimization-gitlab-script-smoke/refunds" "${SECOND_PROJECT_GO}"
-          ;;
-        *)
-          fail "Unsupported PROJECT_LAYOUT: ${PROJECT_LAYOUT}"
-          ;;
-      esac
-
-      stdout_file="instrumentation.stdout"
-      stderr_file="instrumentation.stderr"
-
-      set +e
-      if [ -n "${GO_MODULE_DIR:-}" ]; then
-        LANGUAGES="go" SERVICE="my-service" API_KEY="dummy" GO_MODULE_DIR="${GO_MODULE_DIR}" source <(cat script.sh) >"${stdout_file}" 2>"${stderr_file}"
-      else
-        LANGUAGES="go" SERVICE="my-service" API_KEY="dummy" source <(cat script.sh) >"${stdout_file}" 2>"${stderr_file}"
-      fi
-      action_exit=$?
-      set -e
-
-      cat "${stdout_file}"
-      if [ -s "${stderr_file}" ]; then
-        cat "${stderr_file}" >&2
-      fi
-
-      if [ "${EXPECT_ACTION_FAILURE}" = "true" ]; then
-        [ "${action_exit}" -ne 0 ] || fail "Expected the wrapper to fail."
-        grep -Fq "${EXPECTED_FAILURE_MESSAGE}" "${stderr_file}" || fail "Missing expected failure message: ${EXPECTED_FAILURE_MESSAGE}"
-        exit 0
-      fi
-
-      [ "${action_exit}" -eq 0 ] || fail "Expected the wrapper to succeed."
-
-      if [ -n "${EXPECTED_SKIP_MESSAGE:-}" ]; then
-        [ -z "${GOFLAGS:-}" ] || fail "GOFLAGS should stay unset when Go instrumentation is skipped."
-        [ -z "${DD_TRACER_VERSION_GO:-}" ] || fail "DD_TRACER_VERSION_GO should stay unset when Go instrumentation is skipped."
-        grep -Fq "${EXPECTED_SKIP_MESSAGE}" "${stderr_file}" || fail "Missing expected skip message: ${EXPECTED_SKIP_MESSAGE}"
-        exit 0
-      fi
-
-      [ -n "${GOFLAGS:-}" ] || fail "GOFLAGS was not set."
-      [ -n "${DD_TRACER_VERSION_GO:-}" ] || fail "DD_TRACER_VERSION_GO was not set."
-      echo "${GOFLAGS}" | grep -Fq "orchestrion toolexec" || fail "GOFLAGS does not include orchestrion."
-      [ -f "${TEST_WORKDIR}/orchestrion.tool.go" ] || fail "orchestrion.tool.go was not created in ${TEST_WORKDIR}."
-
-      if [ "${RUN_GO_TESTS}" = "true" ]; then
-        (
-          cd "${TEST_WORKDIR}"
-          DD_TRACE_DEBUG="true" go test -v ./...
-        )
-      fi
-      BASH
-
-test_go_root_go124_success:
+test_go_default:
   extends: .go_smoke_test
-  image: golang:1.26.1
+  image: golang:1.25
   variables:
-    PROJECT_LAYOUT: root
-    PROJECT_GO: "1.24.0"
-    RUN_GO_TESTS: "true"
-    TEST_WORKDIR: "."
-    EXPECT_ACTION_FAILURE: "false"
+    EXPECT_GO: instrumented
+    EXPECT_DDTEST_VERSION: latest
 
-test_go_root_go125_success:
+test_go_latest_image:
   extends: .go_smoke_test
-  image: golang:1.26.1
+  image: golang:1
   variables:
-    PROJECT_LAYOUT: root
-    PROJECT_GO: "1.25.0"
-    RUN_GO_TESTS: "true"
-    TEST_WORKDIR: "."
-    EXPECT_ACTION_FAILURE: "false"
+    EXPECT_GO: instrumented
+    EXPECT_DDTEST_VERSION: latest
 
-test_go_root_go122_skip:
+# BusyBox's wget and sha256sum download and check ddtest.
+test_go_alpine:
   extends: .go_smoke_test
-  image: golang:1.26.1
+  image: golang:1.25-alpine
   variables:
-    PROJECT_LAYOUT: root
-    PROJECT_GO: "1.22.0"
-    RUN_GO_TESTS: "false"
-    TEST_WORKDIR: "."
-    EXPECT_ACTION_FAILURE: "false"
-    EXPECTED_SKIP_MESSAGE: "The project Go version (1.22.0) is lower than the minimum Go version required by dd-trace-go"
+    EXPECT_GO: instrumented
+    EXPECT_DDTEST_VERSION: latest
 
-test_go_runner_below_minimum_skip:
+test_go_pinned_version:
   extends: .go_smoke_test
-  image: golang:1.23.12
+  image: golang:1.25
   variables:
-    PROJECT_LAYOUT: root
-    PROJECT_GO: "1.24.0"
-    RUN_GO_TESTS: "false"
-    TEST_WORKDIR: "."
-    EXPECT_ACTION_FAILURE: "false"
-    EXPECTED_SKIP_MESSAGE: "The installed Go version (1.23.12) is lower than the minimum Go version required by dd-trace-go"
+    GO_TRACER_VERSION: v1.16.0
+    EXPECT_GO: instrumented
+    EXPECT_DDTEST_VERSION: v1.16.0
 
-test_go_single_nested_go124_auto_detect:
+# An Orchestrion version names no ddtest release: the latest is installed.
+test_go_orchestrion_pin:
   extends: .go_smoke_test
-  image: golang:1.26.1
+  image: golang:1.25
   variables:
-    PROJECT_LAYOUT: single_nested
-    PROJECT_GO: "1.24.0"
-    RUN_GO_TESTS: "true"
-    TEST_WORKDIR: "services/payments"
-    EXPECT_ACTION_FAILURE: "false"
+    GO_TRACER_VERSION: v1.8.0
+    EXPECT_GO: instrumented
+    EXPECT_DDTEST_VERSION: latest
+    EXPECT_STDERR: "Warning: DD_SET_TRACER_VERSION_GO=v1.8.0 is not a ddtest release"
 
-test_go_single_nested_go125_auto_detect:
+# Two modules below the root, with the deprecated variables set.
+test_go_multiple_modules_deprecated_variables:
   extends: .go_smoke_test
-  image: golang:1.26.1
-  variables:
-    PROJECT_LAYOUT: single_nested
-    PROJECT_GO: "1.25.0"
-    RUN_GO_TESTS: "true"
-    TEST_WORKDIR: "services/payments"
-    EXPECT_ACTION_FAILURE: "false"
-
-test_go_multiple_modules_without_override_skip:
-  extends: .go_smoke_test
-  image: golang:1.26.1
+  image: golang:1.25
   variables:
     PROJECT_LAYOUT: multiple_modules
-    PROJECT_GO: "1.24.0"
-    SECOND_PROJECT_GO: "1.25.0"
-    RUN_GO_TESTS: "false"
-    TEST_WORKDIR: "."
-    EXPECT_ACTION_FAILURE: "false"
-    EXPECTED_SKIP_MESSAGE: "Set DD_CIVISIBILITY_GO_MODULE_DIR to the Go module root if this repository contains multiple Go modules."
+    GO_MODULE_DIR: ./go-smoke/services/payments
+    PYTHON_COVERAGE_VERSION: "7.13.5"
+    EXPECT_GO: instrumented
+    EXPECT_DDTEST_VERSION: latest
+    EXPECT_STDERR: |
+      Warning: GO_MODULE_DIR is deprecated and has no effect
+      Warning: PYTHON_COVERAGE_VERSION is deprecated and has no effect
 
-test_go_multiple_modules_with_override_success:
+# ddtest needs Go 1.25: the script skips Go with a warning.
+test_go_124_skip:
   extends: .go_smoke_test
-  image: golang:1.26.1
+  image: golang:1.24
   variables:
-    PROJECT_LAYOUT: multiple_modules
-    PROJECT_GO: "1.25.0"
-    SECOND_PROJECT_GO: "1.24.0"
-    GO_MODULE_DIR: "./services/payments"
-    RUN_GO_TESTS: "true"
-    TEST_WORKDIR: "services/payments"
-    EXPECT_ACTION_FAILURE: "false"
-
-test_go_missing_override_directory_skip:
-  extends: .go_smoke_test
-  image: golang:1.26.1
-  variables:
-    PROJECT_LAYOUT: root
-    PROJECT_GO: "1.24.0"
-    GO_MODULE_DIR: "./services/does-not-exist"
-    RUN_GO_TESTS: "false"
-    TEST_WORKDIR: "."
-    EXPECT_ACTION_FAILURE: "false"
-    EXPECTED_SKIP_MESSAGE: "Error: DD_CIVISIBILITY_GO_MODULE_DIR points to a directory that does not exist: ./services/does-not-exist"
+    EXPECT_GO: skipped
+    EXPECT_STDERR: "is lower than the Go 1.25.0 that ddtest instrument needs"

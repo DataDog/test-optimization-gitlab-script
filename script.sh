@@ -73,14 +73,14 @@ if [ -n "$RUBY_TRACER_VERSION" ]; then
 	export DD_SET_TRACER_VERSION_RUBY=${RUBY_TRACER_VERSION}
 fi
 
-# $GO_TRACER_VERSION or $DD_SET_TRACER_VERSION_GO are optional
+# $GO_TRACER_VERSION or $DD_SET_TRACER_VERSION_GO are optional: a ddtest release
 if [ -n "$GO_TRACER_VERSION" ]; then
 	export DD_SET_TRACER_VERSION_GO=${GO_TRACER_VERSION}
 fi
 
-# $GO_MODULE_DIR or $DD_CIVISIBILITY_GO_MODULE_DIR are optional
+# $GO_MODULE_DIR is deprecated: ddtest instruments go test in every Go module
 if [ -n "$GO_MODULE_DIR" ]; then
-	export DD_CIVISIBILITY_GO_MODULE_DIR=${GO_MODULE_DIR}
+	>&2 echo "Warning: GO_MODULE_DIR is deprecated and has no effect: ddtest instruments go test in every Go module of the repository."
 fi
 
 # $JAVA_INSTRUMENTED_BUILD_SYSTEM or $DD_INSTRUMENTATION_BUILD_SYSTEM_JAVA are optional
@@ -88,17 +88,17 @@ if [ -n "$JAVA_INSTRUMENTED_BUILD_SYSTEM" ]; then
 	export DD_INSTRUMENTATION_BUILD_SYSTEM_JAVA=${JAVA_INSTRUMENTED_BUILD_SYSTEM}
 fi
 
-# $PYTHON_COVERAGE_VERSION or $DD_SET_COVERAGE_VERSION_PYTHON are optional
+# $PYTHON_COVERAGE_VERSION is deprecated: the Python tracer no longer needs coverage
 if [ -n "$PYTHON_COVERAGE_VERSION" ]; then
-	export DD_SET_COVERAGE_VERSION_PYTHON=${PYTHON_COVERAGE_VERSION}
+	>&2 echo "Warning: PYTHON_COVERAGE_VERSION is deprecated and has no effect: the Python tracer no longer needs the coverage package, and the script no longer installs it."
 fi
 
 export DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER="gitlab"
 
 # Keep the installer URL and checksum pinned together so the wrapper executes a
 # deterministic upstream payload.
-installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v15.sh"
-installation_script_checksum="e64a4a45e0b171f4294b9f949f7fc99946192f952a2d463c61fad3cb8b956a58"
+installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v16.sh"
+installation_script_checksum="c17d89e4e0d2bbfb717217e05f7e64fb0f9c463a1836e46151080b1a6c621ea9"
 script_filepath="install_test_visibility.sh"
 
 if command -v curl >/dev/null 2>&1; then
