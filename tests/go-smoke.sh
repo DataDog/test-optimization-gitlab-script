@@ -8,6 +8,9 @@
 #   PROJECT_LAYOUT         root, or multiple_modules for two modules below it
 #   EXPECT_STDERR          optional lines, each of which script.sh's stderr
 #                          must contain
+#   WITHOUT_CURL           1 when the image has no curl, so the downloads go
+#                          through wget; the expected version must then be
+#                          pinned, since looking the latest up needs curl
 # and script.sh's own variables, such as GO_TRACER_VERSION.
 #
 # Each module declares go 1.22: ddtest builds with the image's toolchain and
@@ -58,6 +61,10 @@ for module_dir in "${modules[@]}"; do
 done
 cp -R go-smoke "$work_dir/go-smoke.before"
 toolchain_go="$(command -v go)"
+if [ "${WITHOUT_CURL:-}" = "1" ]; then
+  ! command -v curl >/dev/null 2>&1 || fail "WITHOUT_CURL=1, but curl is installed"
+  command -v wget >/dev/null 2>&1 || fail "WITHOUT_CURL=1 needs wget"
+fi
 
 # As the README shows, in the job's own shell. script.sh, like the jobs that
 # source it, does not expect nounset.

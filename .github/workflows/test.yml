@@ -45,11 +45,18 @@ jobs:
             image: golang:1
             expect_go: instrumented
             expect_ddtest_version: latest
-          # BusyBox's wget and sha256sum download and check ddtest.
+          # BusyBox's sha256sum checks ddtest; curl downloads it.
           - name: golang:1.25-alpine
             image: golang:1.25-alpine
             expect_go: instrumented
             expect_ddtest_version: latest
+          # No curl: BusyBox's wget downloads the installer and ddtest.
+          - name: golang:1.25-alpine, BusyBox wget
+            image: golang:1.25-alpine
+            without_curl: "1"
+            go_tracer_version: v1.16.0
+            expect_go: instrumented
+            expect_ddtest_version: v1.16.0
           - name: GO_TRACER_VERSION v1.16.0
             image: golang:1.25
             go_tracer_version: v1.16.0
@@ -85,12 +92,15 @@ jobs:
       - name: Install Bash, curl and Python
         shell: sh
         run: sh tests/prepare-container.sh
+        env:
+          WITHOUT_CURL: ${{ matrix.without_curl }}
 
       - name: Source script.sh and run go test
         shell: bash
         run: bash tests/go-smoke.sh
         env:
           PROJECT_LAYOUT: ${{ matrix.project_layout }}
+          WITHOUT_CURL: ${{ matrix.without_curl }}
           GO_TRACER_VERSION: ${{ matrix.go_tracer_version }}
           GO_MODULE_DIR: ${{ matrix.go_module_dir }}
           PYTHON_COVERAGE_VERSION: ${{ matrix.python_coverage_version }}

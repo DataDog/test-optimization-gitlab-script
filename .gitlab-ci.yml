@@ -47,13 +47,23 @@ test_go_latest_image:
     EXPECT_GO: instrumented
     EXPECT_DDTEST_VERSION: latest
 
-# BusyBox's wget and sha256sum download and check ddtest.
+# BusyBox's sha256sum checks ddtest; curl downloads it.
 test_go_alpine:
   extends: .go_smoke_test
   image: golang:1.25-alpine
   variables:
     EXPECT_GO: instrumented
     EXPECT_DDTEST_VERSION: latest
+
+# No curl: BusyBox's wget downloads the installer and ddtest.
+test_go_alpine_busybox_wget:
+  extends: .go_smoke_test
+  image: golang:1.25-alpine
+  variables:
+    WITHOUT_CURL: "1"
+    GO_TRACER_VERSION: v1.16.0
+    EXPECT_GO: instrumented
+    EXPECT_DDTEST_VERSION: v1.16.0
 
 test_go_pinned_version:
   extends: .go_smoke_test
