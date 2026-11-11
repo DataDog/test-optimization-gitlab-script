@@ -1,0 +1,109 @@
+# The jobs of .gitlab-ci.yml, in the same images, on every pull request: each
+# sources script.sh in one shell, as GitLab jobs do. See tests/go-smoke.sh.
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  java:
+    name: java (adoptopenjdk/openjdk11)
+    runs-on: ubuntu-latest
+    container: adoptopenjdk/openjdk11:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Source script.sh and run Java
+        shell: bash
+        run: |
+          # script.sh reads variables that may be unset, so no nounset.
+          set -eo pipefail
+          LANGUAGES="java" SERVICE="my-service" API_KEY="dummy" JAVA_INSTRUMENTED_BUILD_SYSTEM="all" source <(cat script.sh)
+          java -version 2>&1 | tee java-output.log
+          grep -q "CI Visibility settings" java-output.log || { echo "Error: Output does not contain tracer initialisation log: CI Visibility settings"; exit 1; }
+
+  go:
+    name: go (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: golang:1.25
+            image: golang:1.25
+            expect_go: instrumented
+            expect_ddtest_version: latest
+          - name: golang:1
+            image: golang:1
+            expect_go: instrumented
+            expect_ddtest_version: latest
+          # BusyBox's sha256sum checks ddtest; curl downloads it.
+          - name: golang:1.25-alpine
+            image: golang:1.25-alpine
+            expect_go: instrumented
+            expect_ddtest_version: latest
+          # No curl: BusyBox's wget downloads the installer and ddtest.
+          - name: golang:1.25-alpine, BusyBox wget
+            image: golang:1.25-alpine
+            without_curl: "1"
+            go_tracer_version: v1.16.0
+            expect_go: instrumented
+            expect_ddtest_version: v1.16.0
+          - name: GO_TRACER_VERSION v1.16.0
+            image: golang:1.25
+            go_tracer_version: v1.16.0
+            expect_go: instrumented
+            expect_ddtest_version: v1.16.0
+          # An Orchestrion version names no ddtest release: the latest is installed.
+          - name: earlier Orchestrion pin
+            image: golang:1.25
+            go_tracer_version: v1.8.0
+            expect_go: instrumented
+            expect_ddtest_version: latest
+            expect_stderr: "Warning: DD_SET_TRACER_VERSION_GO=v1.8.0 is not a ddtest release"
+          # Two modules below the root, with the deprecated variables set.
+          - name: multiple modules, deprecated variables
+            image: golang:1.25
+            project_layout: multiple_modules
+            go_module_dir: ./go-smoke/services/payments
+            python_coverage_version: "7.13.5"
+            expect_go: instrumented
+            expect_ddtest_version: latest
+            expect_stderr: |
+              Warning: GO_MODULE_DIR is deprecated and has no effect
+              Warning: PYTHON_COVERAGE_VERSION is deprecated and has no effect
+          # ddtest needs Go 1.25: the script skips Go with a warning.
+          - name: golang:1.24 skip
+            image: golang:1.24
+            expect_go: skipped
+            expect_stderr: "is lower than the Go 1.25.0 that ddtest instrument needs"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Install Bash, curl and Python
+        shell: sh
+        run: sh tests/prepare-container.sh
+        env:
+          WITHOUT_CURL: ${{ matrix.without_curl }}
+
+      - name: Source script.sh and run go test
+        shell: bash
+        run: bash tests/go-smoke.sh
+        env:
+          PROJECT_LAYOUT: ${{ matrix.project_layout }}
+          WITHOUT_CURL: ${{ matrix.without_curl }}
+          GO_TRACER_VERSION: ${{ matrix.go_tracer_version }}
+          GO_MODULE_DIR: ${{ matrix.go_module_dir }}
+          PYTHON_COVERAGE_VERSION: ${{ matrix.python_coverage_version }}
+          EXPECT_GO: ${{ matrix.expect_go }}
+          EXPECT_DDTEST_VERSION: ${{ matrix.expect_ddtest_version }}
+          EXPECT_STDERR: ${{ matrix.expect_stderr }}
