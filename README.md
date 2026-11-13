@@ -72,7 +72,7 @@ test_node:
 
 ### Tracing vitest tests
 
-ℹ️ This section is only relevant if you're running tests with [vitest](https://github.com/vitest-dev/vitest).
+ℹ️ This section is only relevant if you're running tests with [vitest](https://github.com/vitest-dev/vitest). Vitest is ESM first and requires the additional `--import` flag shown below.
 
 To use this script with vitest you need to modify the NODE_OPTIONS environment variable adding the `--import` flag with the value of the `DD_TRACE_ESM_IMPORT` environment variable.
 
@@ -91,10 +91,6 @@ test_node_vitest:
 ```
 
 **Important**: `vitest` and `dd-trace` require Node.js>=18.19 or Node.js>=20.6 to work together.
-
-### Tracing cypress tests
-
-To instrument your [Cypress](https://www.cypress.io/) tests with Datadog Test Optimization, please follow the manual steps in the [docs](https://docs.datadoghq.com/tests/setup/javascript/?tab=cypress).
 
 ### Tracing Go tests
 
