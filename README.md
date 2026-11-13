@@ -94,7 +94,7 @@ test_node_vitest:
 
 ### Tracing Cypress tests
 
-Cypress uses the standard JavaScript auto-instrumentation setup shown above. No changes to the Cypress configuration or support file are required. Use `dd-trace` v5.97.0 or later on the v5 release line, or v6.0.0 or later on the v6 release line, and a [compatible Cypress version](https://docs.datadoghq.com/tests/setup/javascript/?tab=cypress#compatibility) (10.2 or later).
+Cypress uses the standard JavaScript auto-instrumentation setup shown above. No changes to the Cypress configuration or support file are required.
 
 ### Tracing Go tests
 
