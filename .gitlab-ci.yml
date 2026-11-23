@@ -104,3 +104,63 @@ test_go_124_skip:
   variables:
     EXPECT_GO: skipped
     EXPECT_STDERR: "is lower than the Go 1.25.0 that ddtest instrument needs"
+
+# Each job sources script.sh for Rust in the job's shell, as the README shows,
+# and runs cargo test in the next commands against a local stand-in for the
+# intake: see tests/rust-smoke.sh. The intake needs Python.
+.rust_smoke_test:
+  stage: test
+  cache: []
+  before_script:
+    - sh tests/prepare-container.sh
+  script:
+    - bash tests/rust-smoke.sh
+
+test_rust_default:
+  extends: .rust_smoke_test
+  image: rust:1
+  variables:
+    EXPECT_RUST: instrumented
+    EXPECT_DD_TEST_RS_VERSION: latest
+
+# BusyBox's sha256sum checks dd-test-wrapper; curl downloads it.
+test_rust_alpine:
+  extends: .rust_smoke_test
+  image: rust:1-alpine
+  variables:
+    EXPECT_RUST: instrumented
+    EXPECT_DD_TEST_RS_VERSION: latest
+
+# No curl: BusyBox's wget downloads dd-test-wrapper.
+test_rust_alpine_busybox_wget:
+  extends: .rust_smoke_test
+  image: rust:1-alpine
+  variables:
+    WITHOUT_CURL: "1"
+    RUST_TRACER_VERSION: v0.2.0
+    EXPECT_RUST: instrumented
+    EXPECT_DD_TEST_RS_VERSION: v0.2.0
+
+test_rust_pinned_version:
+  extends: .rust_smoke_test
+  image: rust:1
+  variables:
+    RUST_TRACER_VERSION: v0.2.0
+    EXPECT_RUST: instrumented
+    EXPECT_DD_TEST_RS_VERSION: v0.2.0
+
+# dd-test-rs needs Rust 1.81: the script reports an error.
+test_rust_180_unavailable:
+  extends: .rust_smoke_test
+  image: rust:1.80
+  variables:
+    EXPECT_RUST: unavailable
+    EXPECT_STDERR: "Rust 1.81.0 or newer is required"
+
+# An image without Cargo: the script reports an error.
+test_rust_without_cargo:
+  extends: .rust_smoke_test
+  image: golang:1.25
+  variables:
+    EXPECT_RUST: unavailable
+    EXPECT_STDERR: "Error: cargo is not installed."

@@ -83,6 +83,11 @@ if [ -n "$GO_MODULE_DIR" ]; then
 	>&2 echo "Warning: GO_MODULE_DIR is deprecated and has no effect: ddtest instruments go test in every Go module of the repository."
 fi
 
+# $RUST_TRACER_VERSION or $DD_SET_TRACER_VERSION_RUST are optional: a dd-test-rs release
+if [ -n "$RUST_TRACER_VERSION" ]; then
+	export DD_SET_TRACER_VERSION_RUST=${RUST_TRACER_VERSION}
+fi
+
 # $JAVA_INSTRUMENTED_BUILD_SYSTEM or $DD_INSTRUMENTATION_BUILD_SYSTEM_JAVA are optional
 if [ -n "$JAVA_INSTRUMENTED_BUILD_SYSTEM" ]; then
 	export DD_INSTRUMENTATION_BUILD_SYSTEM_JAVA=${JAVA_INSTRUMENTED_BUILD_SYSTEM}
@@ -97,8 +102,8 @@ export DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER="gitlab"
 
 # Keep the installer URL and checksum pinned together so the wrapper executes a
 # deterministic upstream payload.
-installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v16.sh"
-installation_script_checksum="c17d89e4e0d2bbfb717217e05f7e64fb0f9c463a1836e46151080b1a6c621ea9"
+installation_script_url="https://install.datadoghq.com/scripts/install_test_visibility_v17.sh"
+installation_script_checksum="669f7969cd53bea87a49c611455272fcd809fc9a08d053a1b76e9c5958c1b3e5"
 script_filepath="install_test_visibility.sh"
 
 if command -v curl >/dev/null 2>&1; then
@@ -143,5 +148,8 @@ if [ ! -z "$DD_TRACER_VERSION_RUBY" ]; then
 fi
 if [ ! -z "$DD_TRACER_VERSION_GO" ]; then
   echo "- __Go:__ $DD_TRACER_VERSION_GO"
+fi
+if [ ! -z "$DD_TRACER_VERSION_RUST" ]; then
+  echo "- __Rust:__ $DD_TRACER_VERSION_RUST"
 fi
 echo "---"
