@@ -1,7 +1,7 @@
 # <img height="25" src="logos/test_visibility_logo.png" /> Datadog Test Optimization GitLab Script
 
 Bash script that installs and configures [Datadog Test Optimization](https://docs.datadoghq.com/tests/) for GitLab.
-Supported languages are .NET, Java, Javascript, Python, Ruby and Go.
+Supported languages are .NET, Java, Javascript, Python, Ruby, Go and Rust.
 
 ## About Datadog Test Optimization
 
@@ -18,8 +18,8 @@ test_node:
   script:
     - |
       LANGUAGES="js" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.3.0/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^94657425c864c4d2a2f73ba4805d10888e7b62e26a2fc191b7e8453581376002' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.4.0/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^96e09d6b59a62a0eb861d32f4f2f81c7be7b2222b1b5ca546ba18862227d85cc' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - npm run test
@@ -31,7 +31,7 @@ The script takes in the following environment variables:
 
 | Name                           | Description                                                                                                                                                                                                                                                                                         | Required | Default       |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------- |
-| LANGUAGES                      | List of languages to be instrumented. Can be either "all" or any of "java", "js", "python", "dotnet", "ruby", "go" (multiple languages can be specified as a space-separated list).                                                                                                                 | true     |               |
+| LANGUAGES                      | List of languages to be instrumented. Can be either "all" or any of "java", "js", "python", "dotnet", "ruby", "go", "rust" (multiple languages can be specified as a space-separated list).                                                                                                            | true     |               |
 | API_KEY                        | Datadog API key. Can be found at https://app.datadoghq.com/organization-settings/api-keys                                                                                                                                                                                                           | true     |               |
 | SITE                           | Datadog site. See https://docs.datadoghq.com/getting_started/site for more information about sites.                                                                                                                                                                                                 | false    | datadoghq.com |
 | SERVICE                        | The name of the service or library being tested.                                                                                                                                                                                                                                                    | false    |               |
@@ -44,6 +44,7 @@ The script takes in the following environment variables:
 | PYTHON_TRACER_VERSION          | The version of Datadog Python tracer to use. Defaults to the latest release.                                                                                                                                                                                                                        | false    |               |
 | RUBY_TRACER_VERSION            | The version of datadog-ci gem to use. Defaults to the latest release.                                                                                                                                                                                                                               | false    |               |
 | GO_TRACER_VERSION              | The version of [ddtest](https://github.com/DataDog/ddtest) to use for Go, `v1.14.0` or newer. Defaults to the latest release. See [Tracing Go tests](#tracing-go-tests).                                                                                                                            | false    |               |
+| RUST_TRACER_VERSION            | The version of [dd-test-rs](https://github.com/DataDog/dd-test-rs) to use for Rust. Defaults to the latest release. See [Tracing Rust tests](#tracing-rust-tests).                                                                                                                                  | false    |               |
 | JAVA_INSTRUMENTED_BUILD_SYSTEM | If provided, only the specified build systems will be instrumented (allowed values are `gradle`,`maven`,`sbt`,`ant`,`all`). `all` is a special value that instruments every Java process. If this property is not provided, all known build systems will be instrumented (Gradle, Maven, SBT, Ant). | false    |               |
 
 The deprecated variables `GO_MODULE_DIR` and `PYTHON_COVERAGE_VERSION` are still accepted, with a warning, and have no effect: ddtest instruments `go test` in every Go module, and the Python tracer no longer needs the `coverage` package, which the script no longer installs.
@@ -61,8 +62,8 @@ test_node:
     - export DD_TAGS="layer:api,team:intake,key:value"
     - |
       LANGUAGES="js" SITE="datadoghq.com" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.3.0/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^94657425c864c4d2a2f73ba4805d10888e7b62e26a2fc191b7e8453581376002' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.4.0/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^96e09d6b59a62a0eb861d32f4f2f81c7be7b2222b1b5ca546ba18862227d85cc' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - npm run test
@@ -82,8 +83,8 @@ test_node_vitest:
   script:
     - |
       LANGUAGES="js" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.3.0/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^94657425c864c4d2a2f73ba4805d10888e7b62e26a2fc191b7e8453581376002' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.4.0/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^96e09d6b59a62a0eb861d32f4f2f81c7be7b2222b1b5ca546ba18862227d85cc' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - export NODE_OPTIONS="$NODE_OPTIONS --import $DD_TRACE_ESM_IMPORT"
@@ -102,8 +103,8 @@ test_go:
   script:
     - |
       LANGUAGES="go" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" \
-      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.3.0/script.sh); \
-      echo "$SRC" | sha256sum | grep -q '^94657425c864c4d2a2f73ba4805d10888e7b62e26a2fc191b7e8453581376002' && \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.4.0/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^96e09d6b59a62a0eb861d32f4f2f81c7be7b2222b1b5ca546ba18862227d85cc' && \
         source <(echo "$SRC") || \
         echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
     - go test ./...
@@ -114,3 +115,29 @@ test_go:
 - Run the tests later in the same job, after the script. ddtest's `go` command lives in the job user's cache directory and is a link to the executable in the `.datadog` folder that the script creates. If a later command deletes that folder or puts another `go` first on `PATH`, `go test` runs without Test Optimization.
 - With Test Impact Analysis, build the tests with coverage in count or atomic mode, such as `go test -cover -covermode=atomic ./...`, so each test reports the code it ran.
 - `GO_TRACER_VERSION` selects a ddtest release. It used to select an Orchestrion version, so a value set then no longer installs that version. A value that names no ddtest release from `v1.14.0` on, such as `v1.8.0`, installs the latest ddtest with a warning, and a version from `v1.14.0` on installs the ddtest release with the same number. To keep Orchestrion, use release v1.2.10 of this script or earlier.
+
+### Tracing Rust tests
+
+Rust tests report through [dd-test-rs](https://github.com/DataDog/dd-test-rs). The script unpacks `dd-test-wrapper` in the `.datadog` folder and sets `RUSTC_WORKSPACE_WRAPPER` to its absolute path, so `cargo test` and `cargo nextest run` report to Test Optimization without changes to the project. The script does not modify your `Cargo.toml`.
+
+```yaml
+test_rust:
+  image: rust:1
+  script:
+    - |
+      LANGUAGES="rust" SITE="datadoghq.com" API_KEY="YOUR_API_KEY_SECRET" \
+      SRC=$(curl -fsSL https://github.com/DataDog/test-optimization-gitlab-script/releases/download/v1.4.0/script.sh); \
+      echo "$SRC" | sha256sum | grep -q '^96e09d6b59a62a0eb861d32f4f2f81c7be7b2222b1b5ca546ba18862227d85cc' && \
+        source <(echo "$SRC") || \
+        echo "ERROR: SHA256 mismatch. Datadog Test Optimization autoinstrumentation not enabled." >&2
+    - cargo test
+```
+
+- The job's image needs Cargo and Rust 1.81 or newer. Linux and macOS runners on `amd64` and `arm64` are supported, and Windows runners skip Rust with a warning.
+- With `LANGUAGES="all"`, the script skips Rust with a warning when Cargo or `rustc` is missing, or Rust is older than 1.81, so jobs without a Rust toolchain keep working. When `"rust"` is listed explicitly, the script prints an error and the job continues without Rust instrumentation.
+- The job downloads dd-test-rs from `github.com`.
+- The first build recompiles the crates of your workspace, because Cargo includes the wrapper in its build fingerprint. Dependencies stay cached.
+- Test binaries start the wrapper from the absolute path that built them, so run the tests on the same runner as the script.
+- Doctests, tests with a custom harness and test builds with `panic = "abort"` run normally but are not reported. Test Impact Analysis and code coverage are not supported.
+- A `RUSTC_WORKSPACE_WRAPPER` that was already set is replaced, with a warning. Tools set through `RUSTC_WRAPPER`, such as sccache, keep working.
+- `RUST_TRACER_VERSION` selects a dd-test-rs release. A value that names no dd-test-rs release, such as `v0.1.1`, installs the latest release with a warning.

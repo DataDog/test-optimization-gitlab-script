@@ -107,3 +107,62 @@ jobs:
           EXPECT_GO: ${{ matrix.expect_go }}
           EXPECT_DDTEST_VERSION: ${{ matrix.expect_ddtest_version }}
           EXPECT_STDERR: ${{ matrix.expect_stderr }}
+
+  rust:
+    name: rust (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: rust:1
+            image: rust:1
+            expect_rust: instrumented
+            expect_dd_test_rs_version: latest
+          # BusyBox's sha256sum checks dd-test-wrapper; curl downloads it.
+          - name: rust:1-alpine
+            image: rust:1-alpine
+            expect_rust: instrumented
+            expect_dd_test_rs_version: latest
+          # No curl: BusyBox's wget downloads dd-test-wrapper.
+          - name: rust:1-alpine, BusyBox wget
+            image: rust:1-alpine
+            without_curl: "1"
+            rust_tracer_version: v0.2.0
+            expect_rust: instrumented
+            expect_dd_test_rs_version: v0.2.0
+          - name: RUST_TRACER_VERSION v0.2.0
+            image: rust:1
+            rust_tracer_version: v0.2.0
+            expect_rust: instrumented
+            expect_dd_test_rs_version: v0.2.0
+          # dd-test-rs needs Rust 1.81: the script reports an error.
+          - name: rust:1.80
+            image: rust:1.80
+            expect_rust: unavailable
+            expect_stderr: "Rust 1.81.0 or newer is required"
+          # An image without Cargo: the script reports an error.
+          - name: no cargo
+            image: golang:1.25
+            expect_rust: unavailable
+            expect_stderr: "Error: cargo is not installed."
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Install Bash, curl and Python
+        shell: sh
+        run: sh tests/prepare-container.sh
+        env:
+          WITHOUT_CURL: ${{ matrix.without_curl }}
+
+      - name: Source script.sh and run cargo test
+        shell: bash
+        run: bash tests/rust-smoke.sh
+        env:
+          WITHOUT_CURL: ${{ matrix.without_curl }}
+          RUST_TRACER_VERSION: ${{ matrix.rust_tracer_version }}
+          EXPECT_RUST: ${{ matrix.expect_rust }}
+          EXPECT_DD_TEST_RS_VERSION: ${{ matrix.expect_dd_test_rs_version }}
+          EXPECT_STDERR: ${{ matrix.expect_stderr }}
